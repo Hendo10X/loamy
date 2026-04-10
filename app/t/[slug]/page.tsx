@@ -46,7 +46,7 @@ export default function SharedTokenPage({ params }: { params: Promise<{ slug: st
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="font-mono text-sm text-muted-foreground">Token set not found.</p>
-        <Button variant="outline" onClick={() => router.push("/")} className="font-mono text-xs">
+        <Button variant="outline" onClick={() => router.push("/studio")} className="font-mono text-xs">
           ← Back to studio
         </Button>
       </div>
@@ -91,7 +91,7 @@ export default function SharedTokenPage({ params }: { params: Promise<{ slug: st
           <div className="flex items-center gap-3">
             <ExportPanel tokens={tokens} />
             <Button
-              onClick={() => router.push(`/?${remixParams.toString()}`)}
+              onClick={() => router.push(`/studio?${remixParams.toString()}`)}
               className="font-mono text-xs"
             >
               Remix in studio

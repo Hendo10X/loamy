@@ -1,303 +1,144 @@
-"use client"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
-import { useState } from "react"
-import { useSearchParams } from "next/navigation"
-import { Suspense } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { ColorPalette } from "@/components/token-studio/color-palette"
-import { TypographyScale } from "@/components/token-studio/typography-scale"
-import { SpacingScale } from "@/components/token-studio/spacing-scale"
-import { ShadowPresets } from "@/components/token-studio/shadow-presets"
-import { ComponentPreview } from "@/components/token-studio/component-preview"
-import { ExportPanel } from "@/components/token-studio/export-panel"
-import { SaveDialog } from "@/components/token-studio/save-dialog"
-import { generatePalette, isValidHex } from "@/lib/color"
-import {
-  FONT_SIZE_OPTIONS,
-  generateTypeScale,
-  TYPE_RATIO_OPTIONS,
-} from "@/lib/typography"
-import { generateSpacingScale, SPACING_UNIT_OPTIONS } from "@/lib/spacing"
-import { generateShadows } from "@/lib/shadows"
-import type { TokenSet } from "@/lib/export"
-import type { PaletteStep } from "@/lib/color"
-import type { TypeStep } from "@/lib/typography"
-import type { SpacingStep } from "@/lib/spacing"
-import type { ShadowSet } from "@/lib/shadows"
+const FEATURES = [
+  {
+    step: "01",
+    title: "Color System",
+    desc: "11-step OKLCH palette with WCAG contrast badges on every swatch.",
+  },
+  {
+    step: "02",
+    title: "Typography Scale",
+    desc: "Modular scale from any base size and ratio — live text specimens.",
+  },
+  {
+    step: "03",
+    title: "Spacing Scale",
+    desc: "Visual ruler grid built from a 4px or 8px base unit.",
+  },
+  {
+    step: "04",
+    title: "Shadow Presets",
+    desc: "Five elevation levels tinted with your brand hue.",
+  },
+  {
+    step: "05",
+    title: "Component Preview",
+    desc: "Buttons, badges, inputs, and alerts rendered live with your tokens.",
+  },
+  {
+    step: "06",
+    title: "Gradient Presets",
+    desc: "Six ready-to-copy CSS gradients derived from your palette.",
+  },
+]
 
-function SectionHeader({
-  step,
-  title,
-  subtitle,
-}: {
-  step: string
-  title: string
-  subtitle: string
-}) {
+const EXPORTS = ["CSS Variables", "Tailwind Config", "JSON"]
+
+export default function LandingPage() {
   return (
-    <div className="mb-6 flex items-baseline gap-3 sm:gap-4">
-      <span className="shrink-0 font-mono text-xs text-muted-foreground">{step}</span>
-      <div className="min-w-0">
-        <h2 className="text-sm font-medium text-foreground">{title}</h2>
-        <p className="mt-0.5 font-mono text-xs text-muted-foreground">{subtitle}</p>
-      </div>
-    </div>
-  )
-}
-
-function SegmentedControl({
-  options,
-  value,
-  onChange,
-}: {
-  options: { label: string; value: number }[]
-  value: number
-  onChange: (v: number) => void
-}) {
-  return (
-    <div className="flex gap-1">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`rounded-md border px-2.5 py-1.5 font-mono text-xs transition-colors ${
-            value === opt.value
-              ? "border-foreground bg-foreground text-background"
-              : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function TokenStudioInner() {
-  const searchParams = useSearchParams()
-
-  const [hex, setHex] = useState(() => searchParams.get("color") ?? "#6366f1")
-  const [inputText, setInputText] = useState(
-    () => searchParams.get("color") ?? "#6366f1"
-  )
-  const [baseFontSize, setBaseFontSize] = useState(() =>
-    Number(searchParams.get("fs") ?? 16)
-  )
-  const [typeRatio, setTypeRatio] = useState(() =>
-    Number(searchParams.get("ratio") ?? 1.25)
-  )
-  const [baseSpacingUnit, setBaseSpacingUnit] = useState(() =>
-    Number(searchParams.get("unit") ?? 4)
-  )
-
-  const isValid = isValidHex(hex)
-
-  const palette: PaletteStep[] | null = isValid ? generatePalette(hex) : null
-  const typeScale: TypeStep[] | null = isValid
-    ? generateTypeScale(baseFontSize, typeRatio)
-    : null
-  const spacingScale: SpacingStep[] | null = isValid
-    ? generateSpacingScale(baseSpacingUnit)
-    : null
-  const shadows: ShadowSet | null = isValid ? generateShadows(hex) : null
-
-  const tokens: TokenSet | null =
-    palette && typeScale && spacingScale && shadows
-      ? { brandColor: hex, palette, typeScale, spacingScale, shadows }
-      : null
-
-  const handleTextInput = (val: string) => {
-    setInputText(val)
-    const normalized = val.startsWith("#") ? val : `#${val}`
-    if (isValidHex(normalized)) setHex(normalized)
-  }
-
-  const handleColorPicker = (val: string) => {
-    setHex(val)
-    setInputText(val)
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <div className="min-w-0">
-            <h1 className="text-sm font-medium tracking-tight text-foreground">Loamy</h1>
-            <p className="hidden font-mono text-xs text-muted-foreground sm:block">
-              One color. Everything else derived.
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <ExportPanel tokens={tokens} />
-            <SaveDialog
-              brandColor={hex}
-              baseFontSize={baseFontSize}
-              typeRatio={typeRatio}
-              baseSpacingUnit={baseSpacingUnit}
-              disabled={!isValid}
-            />
-          </div>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Nav */}
+      <header className="mx-auto flex max-w-4xl items-center justify-between px-6 py-6">
+        <span className="font-mono text-sm font-medium">Loamy</span>
+        <div className="flex items-center gap-4">
+          <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+            d
+          </kbd>
+          <span className="hidden font-mono text-[10px] text-muted-foreground sm:inline">
+            toggle dark
+          </span>
+          <Link href="/studio">
+            <Button className="font-mono text-xs">Open studio →</Button>
+          </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-12 px-4 py-8 sm:space-y-16 sm:px-6 sm:py-10">
-        {/* Input section */}
-        <section>
-          <div className="flex flex-wrap items-end gap-5 lg:gap-8">
-            {/* Brand Color */}
-            <div className="space-y-2">
-              <Label className="font-mono text-xs text-muted-foreground">Brand color</Label>
-              <div className="flex items-center gap-2">
-                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-border">
-                  <input
-                    type="color"
-                    value={isValidHex(hex) ? hex : "#6366f1"}
-                    onChange={(e) => handleColorPicker(e.target.value)}
-                    className="absolute -inset-1 h-12 w-12 cursor-pointer border-0 bg-transparent p-0 opacity-0"
-                  />
-                  <div
-                    className="h-full w-full rounded-md transition-colors duration-150"
-                    style={{ backgroundColor: isValidHex(hex) ? hex : "#6366f1" }}
-                  />
-                </div>
-                <Input
-                  value={inputText}
-                  onChange={(e) => handleTextInput(e.target.value)}
-                  placeholder="#6366f1"
-                  className="w-32 font-mono text-sm"
-                  spellCheck={false}
-                />
-              </div>
-            </div>
-
-            {/* Base font size */}
-            <div className="space-y-2">
-              <Label className="font-mono text-xs text-muted-foreground">Base font size</Label>
-              <SegmentedControl
-                options={FONT_SIZE_OPTIONS}
-                value={baseFontSize}
-                onChange={setBaseFontSize}
-              />
-            </div>
-
-            {/* Type ratio */}
-            <div className="space-y-2">
-              <Label className="font-mono text-xs text-muted-foreground">Type ratio</Label>
-              <Select
-                value={String(typeRatio)}
-                onValueChange={(v) => setTypeRatio(Number(v))}
-              >
-                <SelectTrigger className="h-auto w-52 px-3 py-1.5 font-mono text-xs">
-                  <SelectValue>
-                    {TYPE_RATIO_OPTIONS.find((o) => String(o.value) === String(typeRatio))?.label ?? typeRatio}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_RATIO_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={String(opt.value)} className="font-mono text-xs">
-                      {opt.label} ({opt.shortLabel})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Spacing unit */}
-            <div className="space-y-2">
-              <Label className="font-mono text-xs text-muted-foreground">Spacing unit</Label>
-              <SegmentedControl
-                options={SPACING_UNIT_OPTIONS.map((o) => ({ label: `${o.value}px`, value: o.value }))}
-                value={baseSpacingUnit}
-                onChange={setBaseSpacingUnit}
-              />
-            </div>
+      {/* Hero */}
+      <section className="mx-auto max-w-4xl px-6 pb-20 pt-16 sm:pt-24">
+        <p className="mb-4 font-mono text-xs tracking-widest text-muted-foreground uppercase">
+          Design Token Studio
+        </p>
+        <h1 className="max-w-2xl text-4xl font-medium leading-tight tracking-tight text-foreground sm:text-5xl">
+          One color.{" "}
+          <span className="text-muted-foreground">Everything else derived.</span>
+        </h1>
+        <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+          Enter a brand color and get a complete design system — palette, type
+          scale, spacing, shadows, gradients — exported as CSS variables,
+          Tailwind config, or JSON.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <Link href="/studio">
+            <Button className="font-mono text-sm">Get started</Button>
+          </Link>
+          <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+            <span>Export as</span>
+            {EXPORTS.map((e, i) => (
+              <span key={e}>
+                {e}
+                {i < EXPORTS.length - 1 && (
+                  <span className="ml-2 text-border">·</span>
+                )}
+              </span>
+            ))}
           </div>
+        </div>
+      </section>
 
-          {!isValid && (
-            <p className="mt-5 font-mono text-xs text-muted-foreground">
-              Enter a valid hex color above to generate your token system.
+      {/* Divider */}
+      <div className="border-t border-border" />
+
+      {/* Features */}
+      <section className="mx-auto max-w-4xl px-6 py-16 sm:py-20">
+        <p className="mb-10 font-mono text-xs tracking-widest text-muted-foreground uppercase">
+          What gets generated
+        </p>
+        <div className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map(({ step, title, desc }) => (
+            <div
+              key={step}
+              className="flex flex-col gap-3 bg-background p-6 transition-colors hover:bg-muted/40"
+            >
+              <span className="font-mono text-xs text-muted-foreground">{step}</span>
+              <h3 className="text-sm font-medium text-foreground">{title}</h3>
+              <p className="font-mono text-xs leading-relaxed text-muted-foreground">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <div className="border-t border-border" />
+      <section className="mx-auto max-w-4xl px-6 py-16 sm:py-20">
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-medium text-foreground">
+              Ready to build your design system?
+            </h2>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">
+              No account needed. Save and share with a link.
             </p>
-          )}
-        </section>
+          </div>
+          <Link href="/studio" className="shrink-0">
+            <Button className="font-mono text-sm">Open studio →</Button>
+          </Link>
+        </div>
+      </section>
 
-        <Separator />
-
-        {/* Color System */}
-        <section>
-          <SectionHeader
-            step="01"
-            title="Color System"
-            subtitle="OKLCH perceptual palette — 11 steps with WCAG contrast ratings"
-          />
-          <ColorPalette palette={palette} />
-        </section>
-
-        <Separator />
-
-        {/* Typography */}
-        <section>
-          <SectionHeader
-            step="02"
-            title="Typography Scale"
-            subtitle={`${baseFontSize}px base · ${TYPE_RATIO_OPTIONS.find((o) => o.value === typeRatio)?.shortLabel ?? typeRatio} ratio`}
-          />
-          <TypographyScale scale={typeScale} brandColor={isValid ? hex : undefined} />
-        </section>
-
-        <Separator />
-
-        {/* Spacing */}
-        <section>
-          <SectionHeader
-            step="03"
-            title="Spacing Scale"
-            subtitle={`${baseSpacingUnit}px base unit · visual ruler`}
-          />
-          <SpacingScale scale={spacingScale} brandColor={isValid ? hex : undefined} />
-        </section>
-
-        <Separator />
-
-        {/* Shadows */}
-        <section>
-          <SectionHeader
-            step="04"
-            title="Shadow Presets"
-            subtitle="Brand-tinted elevation shadows"
-          />
-          <ShadowPresets shadows={shadows} />
-        </section>
-
-        <Separator />
-
-        {/* Component Preview — live UI preview using brand tokens */}
-        <section>
-          <SectionHeader
-            step="05"
-            title="Component Preview"
-            subtitle="Live UI components rendered with your brand tokens"
-          />
-          <ComponentPreview palette={palette} shadows={shadows} />
-        </section>
-      </main>
+      {/* Footer */}
+      <div className="border-t border-border" />
+      <footer className="mx-auto flex max-w-4xl items-center justify-between px-6 py-6">
+        <span className="font-mono text-xs text-muted-foreground">Loamy</span>
+        <span className="font-mono text-xs text-muted-foreground">
+          Press{" "}
+          <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+            d
+          </kbd>{" "}
+          to toggle dark mode
+        </span>
+      </footer>
     </div>
-  )
-}
-
-export default function Page() {
-  return (
-    <Suspense>
-      <TokenStudioInner />
-    </Suspense>
   )
 }
